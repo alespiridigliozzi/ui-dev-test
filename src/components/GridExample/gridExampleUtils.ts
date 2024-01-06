@@ -18,68 +18,51 @@ export const getColumnDefs = (usersData: IUser[]): ColDef[] => {
   const userDataKey = usersData[0];
   if (!userDataKey) return [];
 
-  const columns = [];
-
-  for (const [key, value] of Object.entries(userDataKey)) {
+  const columns = Object.entries(userDataKey).map(([key, value]) => {
     switch (key) {
       case UserDataKeys.id:
-        columns.push({ headerName: key, field: key, hide: true });
-        break;
+        return { headerName: key, field: key, hide: true };
       case UserDataKeys.address:
-        columns.push({
+        return {
           headerName: capitalizeFirstLetter(key),
-          children: Object.keys(value).map((key) => {
-            if (key === UserDataKeys.geo) {
+          children: Object.entries(value).map(([subKey, subValue]) => {
+            const subObject = subValue as Record<string, unknown>;
+            if (subKey === UserDataKeys.geo) {
               return {
-                headerName: 'Geo',
-                children: Object.keys(value.geo).map((key) => {
-                  return {
-                    headerName: capitalizeFirstLetter(key),
-                    field: `${UserDataKeys.address}.${UserDataKeys.geo}.${key}`,
-                    cellStyle: { color: 'white', backgroundColor: 'blue' },
-                  };
-                }),
+                headerName: capitalizeFirstLetter(subKey),
+                children: Object.keys(subObject).map((geoKey) => ({
+                  headerName: capitalizeFirstLetter(geoKey),
+                  field: `${UserDataKeys.address}.${UserDataKeys.geo}.${geoKey}`,
+                  cellStyle: { color: 'white', backgroundColor: 'blue' },
+                })),
               };
             }
             return {
-              headerName: capitalizeFirstLetter(key),
-              field: `${UserDataKeys.address}.${key}`,
+              headerName: capitalizeFirstLetter(subKey),
+              field: `${UserDataKeys.address}.${subKey}`,
               cellStyle: { color: 'white', backgroundColor: 'blue' },
             };
           }),
-        });
-        break;
+        };
       case UserDataKeys.company:
-        columns.push({
+        return {
           headerName: capitalizeFirstLetter(key),
-          children: Object.keys(value).map((key) => {
-            if (key === 'name') {
-              return {
-                headerName: capitalizeFirstLetter(key),
-                field: `${UserDataKeys.company}.${key}`,
-                columnGroupShow: 'closed',
-              };
-            }
-            return {
-              headerName: capitalizeFirstLetter(key),
-              field: `${UserDataKeys.company}.${key}`,
-              columnGroupShow: 'open',
-            };
-          }),
-        });
-        break;
+          children: Object.entries(value).map(([subKey]) => ({
+            headerName: capitalizeFirstLetter(subKey),
+            field: `${UserDataKeys.company}.${subKey}`,
+            columnGroupShow: subKey === 'name' ? 'closed' : 'open',
+          })),
+        };
       case UserDataKeys.website:
-        columns.push({
+        return {
           headerName: capitalizeFirstLetter(key),
           field: key,
           cellRenderer: LinkRenderer,
-        });
-        break;
+        };
       default:
-        columns.push({ headerName: capitalizeFirstLetter(key), field: key });
-        break;
+        return { headerName: capitalizeFirstLetter(key), field: key };
     }
-  }
+  });
 
   return columns;
 };
